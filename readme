@@ -1,0 +1,330 @@
+Building the Driver and application:
+--------------------
+	Run the following command in the driver source folder:
+		$ make
+
+	Once the driver is compliled, the loadable module ax99100.ko will be created in the same folder.
+
+	**  '$' --this symbol represents the shell prompt on linux			
+
+Loading the Driver:
+-------------------
+	
+	To load the driver use the following command:
+		$ insmod ax99100.ko
+
+	**  '$' --this symbol represent the shell prompt on linux			
+
+Unloading the Driver:
+---------------------
+
+	To unload the driver use the following command:
+		$rmmod ax99100
+
+	**  '$' --this symbol represent the shell prompt on linux			
+
+Installing the Serial Port Driver:
+----------------------
+
+	To install the driver use the following command:
+		
+		make install
+
+Uninstalling the Serial Port Driver:
+------------------------
+
+	To un-install the driver use the following command:
+		
+		make uninstall
+
+Features Supported:
+-------------------
+
+	The driver supports all the features supported by the AX99100 serial device and the AX99100 SPI device.
+		Note: only baud rates upto 3.0Mbps are implemented in the current driver.
+	
+Feature Configuration:
+----------------------
+
+  AX99100 serial port:
+  --------------------
+
+	This driver comes with a static array uart_99100_contxts[ ] for all the 16 ports features in the ax99100_sp.c file.
+	Where you can set the features like:
+		-DMA in RX
+		-DMA in TX
+		-enable/disable Flow control
+		-Flow control type
+		-RX fifo trigger level
+		-TX fifo trigger level
+		-x-on character
+		-x-off character
+
+	An example array setting for PORT 0 which will be recognised as /dev/ttyF0:			
+
+	//Port 0	--**This represents that this setting is for port 0 which will be recognised as /dev/ttyF0
+	{
+		.rx_dma_en	= 0,
+		.tx_dma_en	= 0,
+		.uart_mode	= AX99100_RS232_MODE,
+		.en_flow_control= 0,
+		.flow_ctrl_type = AX99100_XON_XOFF_HW_FLOWCONTROL,
+		.rxfifotrigger	= 64,
+		.txfifotrigger	= 64,		
+		.x_on		= SERIAL_DEF_XON,
+		.x_off		= SERIAL_DEF_XOFF,
+	},
+
+	To change the port to different modes for uart_mode settings use the following,
+
+	AX99100_RS422_MODE           	(422 mode)
+	AX99100_RS485_HALF_DUPLEX    	(485 half duplex)
+	AX99100_RS485_HALF_DUPLEX_ECHO	(485 half duplex echo)
+	AX99100_RS485_FULL_DUPLEX    	(485 full duplex)
+	AX99100_RS485_FULL_DUPLEX_TXEN	(485 full duplex DxEN)
+		
+	If you are use AX99100 chip with multi-protocol mode, the uart_99100_contxts[ ] array features need to setup.
+	
+	{
+		...
+		.ltc2872_te485 	= 0,
+		.ltc2872_dz 	= 0,
+		.ltc2872_lb 	= 0,
+		.ltc2872_fen 	= 0,
+		.pci_config_l0s	= 0,
+		.pci_config_l1 	= 0,
+	}
+Kernels:
+--------
+
+	This driver is currently developed and tested on 2.6.13 linux kernel and above 	
+
+Limitations:
+------------
+
+	This ax99100 driver supports a maximum of 4 serial devices or spi device. This can be modified as required
+	
+
+Steps for setting parallel port :
+---------------------------------
+        1. rmmod lp
+        2. rmmod parport_pc
+        2. insmod parport_pc.ko io=bar0 io_hi=bar1 irq=number.
+
+Note: Here, the io, io_hi and irq should be noted from lspci -v.
+
+ 
+Steps for setting gpio[7:0] :
+-----------------------------
+
+	Execute the "gpio_99100" application and the application will show:
+			
+		Please input the port of AX99100. (ex. /dev/ttyF0):
+
+	After specify the serial port, application will show these selections to access GPIO: 
+		0  : GPIO status
+		1  : Setup GPIO direction
+		2  : GPIO write
+		99 : Exit
+		
+
+SPI Test Tool Flow:
+-------------------
+
+	This spi_test tool is used for the AX99100 SPI Demo Board non decoder.
+	The test case according to the following steps:
+
+	#Open AX99100 SPI device:
+		Open char device with AX99100 SPI(ex./dev/spi0)
+	$./spi_test /dev/spi0
+	
+	#Step 1:
+		Set the SPI Control Master Register. Input 457 to set SPIMEN, ASS and SSOE bit.
+	
+	/-----------------------------------------------------------------/
+	SPICMR Setting
+	
+	Number: 0	1	2	3	4	5	6	7		
+	Name:   SSP	CPHA	CPOL	LSB	SPIMEN	ASS	SWE	SSOE	
+	
+	Example: Need to set SPIMEN ASS SSOE bits, and the value is 457
+	Input the value of SPICMR: 457
+	/-----------------------------------------------------------------/
+	
+	
+	#Step 2:
+		Select SPI Source Clocks. Input 0 to select the source clock, 125MHz.
+	
+	/-----------------------------------------------------------------/
+	SPICSS SPICKS Setting
+	
+	Valus:	0:125MHz
+		1:100MHz
+		2,3:EXT_CLK
+	Input the value of SPICKS: 0
+	/-----------------------------------------------------------------/
+	
+	
+	#Step 3:
+		Select whether to enable the clock divide. Input 1 to enable the clock divider.
+	
+	/-----------------------------------------------------------------/
+	SPICSS SPIDIVEN Setting
+	
+	Valus:	0:Disable
+		1:Enable
+	Input the value of SPIDIVEN: 1
+	/-----------------------------------------------------------------/
+	
+	
+	#Step 4:
+		Set the SPI Divider. Input 3 to set the SPI Divider.
+	
+	/-----------------------------------------------------------------/
+	SPIDIVIDER Setting
+
+	Valus:	0 - 255
+	Input the value of SPIDIVIDER: 3
+	/-----------------------------------------------------------------/
+	
+	
+	#Step 5:
+		Select whether to enable the external decoder. Input 0 to disable the externel decoder.
+	
+	/-----------------------------------------------------------------/
+	Externel Decoder Setting
+
+	Valus:	0:Disable
+		1:Enable
+	Input the value of EDE: 0
+	/-----------------------------------------------------------------/
+	
+	
+	#Step 6:
+		Select the desired slave device. Input 0 to select Device 0.
+	
+	/-----------------------------------------------------------------/
+	Divice Setting
+
+	Valus:	0 - 2 (Device 0 - Device 2)
+	Input the value of device: 0
+	/-----------------------------------------------------------------/
+	
+	
+	#Step 7:
+		Set the test count. Input 10 to perform ten times for test.
+	
+	/-----------------------------------------------------------------/
+	Data Test Count Setting
+
+	Input the value of test count: 10
+	/-----------------------------------------------------------------/
+	
+	
+	#Step 8:
+		Select Tx, Rx or TXRX(Compare). Input 2 to select TX & RX (Compare data).
+	
+	/-----------------------------------------------------------------/
+	Data Tx/Rx Direction Setting
+
+	Valus:	0:TX
+		1:RX
+		2:TX & RX
+	Input the value of direction: 2
+	/-----------------------------------------------------------------/
+	
+	
+	#Step 9:
+		Set the data pattern type. Input 255 to set the data pattern type. (255 -> 0xff)
+	
+	/-----------------------------------------------------------------/
+	Data Pattern Type Setting
+
+	Valus:	0 - 255 (0x00 - 0xff)
+	Input the value of pattern: 255
+	/-----------------------------------------------------------------/
+	
+	
+	#Step 10:
+		Select Interrupt or Polling. Input 1 to select the Polling mode.
+	
+	/-----------------------------------------------------------------/
+	Data Interrupt Setting
+
+	Method:	0:Interrupt
+		1:Polling
+	Select the mode: 1
+	/-----------------------------------------------------------------/
+	
+	
+	#Step 11:
+		If you want to modify one data setting, select the data item.
+		Run test to select number 9.
+	
+	/-----------------------------------------------------------------/
+	*************************************************
+	*               Test SPI Setting                *
+	*************************************************
+	**Initial Information:
+	SPICMR: 0xb0 ( SPIMEN ASS SSOE )
+	SPICKS: 0x00 ( 125MHz )		SPIDIVEN: 0x1 ( Enable )	SPIDIVIDER: 3
+
+	**Test Setting:
+	Test Direction: TX & RX
+	Device Num.:  0x6	Test Count:     10	Externel Decoder: 0x0 ( Disable )
+	Pattern Type: 0xff	Data Length:   256	Interrupt Mode:   Polling
+
+	***Initial data***
+	 0: Modify SPICMR
+	 1: Modify SPICKS
+	 2: Modify SPIDIVIDER
+	***Test setting***
+	 3: Select Device
+	 4: Modify Data Pattern(for tx)
+	 5: Modify Test Count
+	 6: Select Tx or Rx
+	 7: Modify Data Length
+	 8: Select Interrupt Mode
+
+	 9: Test performace.
+	99: Exit the test tool.
+	Please choose: 9
+	/-----------------------------------------------------------------/
+	
+	
+	#Result:
+		If you want to run test with the same setting, input Y or y.
+		Otherwise, input N or n.
+		
+	/-----------------------------------------------------------------/
+	*************************************************
+	*               Test SPI Setting                *
+	*************************************************
+	**Initial Information:
+	SPICMR: 0xb0 ( SPIMEN ASS SSOE )
+	SPICKS: 0x00 ( 125MHz )		SPIDIVEN: 0x1 ( Enable )	SPIDIVIDER: 3
+
+	**Test Setting:
+	Test Direction: TX & RX
+	Device Num.:  0x6	Test Count:     10	Externel Decoder: 0x0 ( Disable )
+	Pattern Type: 0xff	Data Length:   256	Interrupt Mode:   Polling
+	*************************************************
+	*                 Throughput                    *
+	*************************************************
+	Test Counter: 10
+	TX Throughput: 0.385650 MB/s
+	RX Throughput: 4.569484 MB/s
+
+	Test again?(Y/N):n	
+	/-----------------------------------------------------------------/
+
+Serial Port 9-bit mode test flow:
+---------------------------------
+Execute the "9bit_test" application and the application will show:
+
+Usage:9bit_test [dev] [option]
+Example: (9-bit mode: Master, ID: 20)
+	 ./9bit_test /dev/ttyF0 -m 1 -i 20
+-m [Mode]	1:Master 2:Slave SW 3:Slave HW 4:Data mode
+-i [Address ID]	range 0-255
+

@@ -1,0 +1,5 @@
+#! /bin/sh
+######
+# This script will be executed during startup. 
+###### 
+modprobe ax99100
