@@ -1,0 +1,10 @@
+*.o
+*.ko
+*.mod
+.parport_pc.o.d
+9bit_test
+advanced_BR
+gpio_99100
+select_BR
+spi_test
+

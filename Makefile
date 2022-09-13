@@ -38,7 +38,7 @@ ax99100-objs := ax99100_spi.o ax99100_sp.o
 
 default:
 	$(RM) *.mod.c *.o *.ko .*.cmd *.symvers
-	make -C $(KDIR) M=$(PWD) modules
+	make -C $(KDIR) M=$(shell pwd) modules
 	gcc -pthread select_BR.c -o select_BR
 	gcc -pthread advanced_BR.c -o advanced_BR
 	gcc -pthread gpio_99100.c -o gpio_99100
@@ -50,7 +50,7 @@ default:
 
 install: default
 ifeq ($(MAJORVERSION),5)
-	$(MAKE) -C $(KDIR) M=$(PWD) modules_install
+	$(MAKE) -C $(KDIR) M=$(shell pwd) modules_install
 	cp ax99100.ko  /lib/modules/$(shell uname -r)/$(MDIR)
 	su -c "/sbin/depmod -a"
 	modprobe ax99100
