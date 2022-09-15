@@ -1,5 +1,5 @@
 /*
- *  linux/drivers/serial/99100.c
+ *  linux/drivers/serial/ax99100_sp.c
  *
  *  Based on drivers/serial/8250.c by Russell King.
  *
@@ -675,6 +675,15 @@ static void serial99100_enable_ms(struct uart_port *port)
 
 	DEBUG("In %s --------------------------------------- START\n",__FUNCTION__);
 	up->ier |= UART_IER_MSI;
+	serial_out(up, UART_IER, up->ier);
+}
+
+static void serial99100_disable_ms(struct uart_port *port)
+{
+	struct uart_99100_port *up = &serial99100_ports[port->line];
+
+	DEBUG("In %s --------------------------------------- START\n",__FUNCTION__);
+	up->ier &= ~UART_IER_MSI;
 	serial_out(up, UART_IER, up->ier);
 }
 
@@ -1780,6 +1789,12 @@ static int serial99100_startup(struct uart_port *port)
 	}
 
 	/*
+	 * Read back the current IER register, so the shadow value matches the current setting.
+	 * Timing is not that critical here.
+	 */
+	up->ier = serial_in(up, UART_IER);
+
+	/*
 	 * And clear the interrupt generating registers again for luck.
 	 */
 	(void) serial_in(up, UART_LSR);
@@ -2225,6 +2240,23 @@ static void serial99100_set_termios(struct uart_port *port, struct termios *term
 	DEBUG("In %s ------------------------------END\n",__FUNCTION__);
 }
 
+void serial99100_set_ldisc(struct uart_port *port, struct ktermios *termios)
+{
+	if (termios->c_line == N_PPS) {
+		port->flags |= UPF_HARDPPS_CD;
+		spin_lock_irq(&port->lock);
+		serial99100_enable_ms(port);
+		spin_unlock_irq(&port->lock);
+	} else {
+		port->flags &= ~UPF_HARDPPS_CD;
+		if (!UART_ENABLE_MS(port, termios->c_cflag)) {
+			spin_lock_irq(&port->lock);
+			serial99100_disable_ms(port);
+			spin_unlock_irq(&port->lock);
+		}
+	}
+}
+
 static void serial99100_pm(struct uart_port *port, unsigned int state, unsigned int oldstate)
 {
 	struct uart_99100_port *p = &serial99100_ports[port->line];
@@ -2561,6 +2593,7 @@ static struct uart_ops serial99100_pops = {
 	.startup		= serial99100_startup,
 	.shutdown		= serial99100_shutdown,
 	.set_termios		= serial99100_set_termios,
+	.set_ldisc		= serial99100_set_ldisc,
 	.pm			= serial99100_pm,
 	.type			= serial99100_type,
 	.release_port		= serial99100_release_port,
