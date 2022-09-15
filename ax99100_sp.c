@@ -501,9 +501,13 @@ static inline void serial99100_clear_fifos(struct uart_99100_port *p)
 //Helper function to set the the UART to sleep mode
 static inline void serial99100_set_sleep(struct uart_99100_port *p, int sleep)
 {
+	unsigned char lcr = 0, efr = 0;
+	
 	DEBUG("In %s ---------------------------------------START\n",__FUNCTION__);
 	if (p->capabilities & UART_CAP_SLEEP) {
 		if (p->capabilities & UART_CAP_EFR) {
+			lcr = serial_in(p, UART_LCR);
+			efr = serial_in(p, UART_EFR);
 			serial_out(p, UART_LCR, 0xBF);
 			serial_out(p, UART_EFR, UART_EFR_ECB);
 			serial_out(p, UART_LCR, 0);
@@ -511,8 +515,8 @@ static inline void serial99100_set_sleep(struct uart_99100_port *p, int sleep)
 		serial_out(p, UART_IER, sleep ? UART_IERX_SLEEP : 0);
 		if (p->capabilities & UART_CAP_EFR) {
 			serial_out(p, UART_LCR, 0xBF);
-			serial_out(p, UART_EFR, 0);
-			serial_out(p, UART_LCR, 0);
+			serial_out(p, UART_EFR, efr);
+			serial_out(p, UART_LCR, lcr);
 		}
 	}
 	DEBUG("In %s ---------------------------------------END\n",__FUNCTION__);
