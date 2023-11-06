@@ -2697,8 +2697,10 @@ static void serial99100_dma_tx_tasklet (unsigned long param)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,37)
 static DECLARE_MUTEX(serial99100_sem);
-#else
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(6,4,0)
 static DEFINE_SEMAPHORE(serial99100_sem);
+#else
+static DEFINE_SEMAPHORE(serial99100_sem, 1);
 #endif
 
 static struct uart_driver starex_serial_driver = {
